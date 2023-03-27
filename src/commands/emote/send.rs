@@ -63,6 +63,7 @@ impl SendAutocomplete {
                     value: CommandOptionChoiceValue::String(k.name.clone()),
                     name_localizations: None,
                 })
+                .take(25)
                 .collect();
 
             util::autocomplete_from_choices(choices)
