@@ -1,11 +1,10 @@
 use twilight_model::application::interaction::{Interaction, InteractionType};
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
-use worker::kv::KvStore;
-use worker::{console_log, Response, Result};
+use worker::{Env, Response};
 
 use crate::commands;
 
-pub async fn handle(interaction: Interaction, emote_store: &KvStore) -> Result<Response> {
+pub async fn handle(interaction: Interaction, env: &Env) -> worker::Result<Response> {
     match interaction.kind {
         InteractionType::Ping => {
             let response = InteractionResponse {
@@ -16,22 +15,12 @@ pub async fn handle(interaction: Interaction, emote_store: &KvStore) -> Result<R
             Response::from_json(&response)
         }
 
-        InteractionType::ApplicationCommand => {
-            console_log!("Received command");
-            commands::run(interaction, emote_store).await
-        }
+        InteractionType::ApplicationCommand => commands::run(interaction, env).await,
 
         InteractionType::ApplicationCommandAutocomplete => {
-            console_log!("Received autocomplete request");
-
-            commands::autocomplete(interaction, emote_store).await
-
-            // Response::error("Unhandled interaction type", 400)
+            commands::autocomplete(interaction, env).await
         }
 
-        _ => {
-            console_log!("Unhandled interaction type");
-            Response::error("Unhandled interaction type", 400)
-        }
+        _ => Response::error("unhandled interaction type", 400),
     }
 }

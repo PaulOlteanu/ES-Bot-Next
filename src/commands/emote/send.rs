@@ -2,8 +2,7 @@ use twilight_interactions::command::{AutocompleteValue, CommandModel, CreateComm
 use twilight_model::application::command::{CommandOptionChoice, CommandOptionChoiceValue};
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_util::builder::InteractionResponseDataBuilder;
-use worker::kv::KvStore;
-use worker::Response;
+use worker::{Env, Response};
 
 use crate::commands::util;
 
@@ -16,13 +15,14 @@ pub struct SendEmote {
 }
 
 #[derive(Debug, CommandModel)]
-#[command(name = "send", desc = "Send an emote", autocomplete = true)]
+#[command(autocomplete = true)]
 pub struct SendAutocomplete {
     emote_name: AutocompleteValue<String>,
 }
 
 impl SendEmote {
-    pub async fn run(&self, emote_store: &KvStore) -> worker::Result<Response> {
+    pub async fn run(&self, env: &Env) -> worker::Result<Response> {
+        let emote_store = env.kv("emote_store")?;
         if let Some(url) = emote_store.get(&self.emote_name).text().await? {
             let response_data = InteractionResponseDataBuilder::new().content(url).build();
 
@@ -40,7 +40,8 @@ impl SendEmote {
 }
 
 impl SendAutocomplete {
-    pub async fn run(&self, emote_store: &KvStore) -> worker::Result<Response> {
+    pub async fn run(&self, env: &Env) -> worker::Result<Response> {
+        let emote_store = env.kv("emote_store")?;
         // TODO: Handle cursor
         let emotes = emote_store.list().execute().await?;
 
@@ -66,7 +67,7 @@ impl SendAutocomplete {
 
             util::autocomplete_from_choices(choices)
         } else {
-            Response::error("idk", 500)
+            Response::error("unexpected autocomplete field", 500)
         }
     }
 }

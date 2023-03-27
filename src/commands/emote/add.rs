@@ -1,8 +1,7 @@
 use twilight_interactions::command::{CommandModel, CreateCommand};
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_util::builder::InteractionResponseDataBuilder;
-use worker::kv::KvStore;
-use worker::Response;
+use worker::{Env, Response};
 
 use crate::commands::emote::parser;
 
@@ -18,11 +17,13 @@ pub struct AddEmote {
 }
 
 impl AddEmote {
-    pub async fn run(&self, emote_store: &KvStore) -> worker::Result<Response> {
+    pub async fn run(&self, env: &Env) -> worker::Result<Response> {
         if let Ok(url) = parser::parse_url(&self.url).await {
             let response_data = InteractionResponseDataBuilder::new()
-                .content(format!("adding emote {} from url {}", self.emote_name, url))
+                .content(format!("adding emote {}", self.emote_name))
                 .build();
+
+            let emote_store = env.kv("emote_store")?;
 
             emote_store.put(&self.emote_name, url)?.execute().await?;
 

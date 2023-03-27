@@ -1,8 +1,7 @@
 use twilight_interactions::command::{CommandInputData, CommandModel, CreateCommand};
 use twilight_model::application::command;
 use twilight_model::application::interaction::{Interaction, InteractionData};
-use worker::kv::KvStore;
-use worker::Response;
+use worker::{Env, Response};
 
 mod emote;
 
@@ -17,23 +16,20 @@ pub fn command_specs() -> Vec<command::Command> {
 }
 
 // TODO: Match on command name
-pub async fn run(interaction: Interaction, emote_store: &KvStore) -> worker::Result<Response> {
+pub async fn run(interaction: Interaction, env: &Env) -> worker::Result<Response> {
     if let Some(InteractionData::ApplicationCommand(data)) = interaction.data {
         if let Ok(command) = Emote::from_interaction(CommandInputData::from(*data)) {
-            return command.run(emote_store).await;
+            return command.run(env).await;
         }
     }
 
     Response::error("invalid args", 401)
 }
 
-pub async fn autocomplete(
-    interaction: Interaction,
-    emote_store: &KvStore,
-) -> worker::Result<Response> {
+pub async fn autocomplete(interaction: Interaction, env: &Env) -> worker::Result<Response> {
     if let Some(InteractionData::ApplicationCommand(data)) = interaction.data {
         if let Ok(command) = EmoteAutocomplete::from_interaction(CommandInputData::from(*data)) {
-            return command.run(emote_store).await;
+            return command.run(env).await;
         }
     }
 

@@ -1,6 +1,6 @@
 use ed25519_dalek::{PublicKey, Signature, Verifier};
 use twilight_model::application::interaction::Interaction;
-use worker::*;
+use worker::{console_log, event, Date, Env, Method, Request, Response};
 
 pub mod commands;
 mod interaction_handler;
@@ -17,10 +17,9 @@ fn log_request(req: &Request) {
 }
 
 #[event(fetch)]
-pub async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
+pub async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> worker::Result<Response> {
     log_request(&req);
 
-    // Optionally, get more helpful error messages written to the console in the case of a panic.
     utils::set_panic_hook();
 
     if req.path() != "/" || req.method() != Method::Post {
@@ -31,13 +30,13 @@ pub async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<R
     let timestamp = if let Some(ts) = headers.get("x-signature-timestamp")? {
         ts
     } else {
-        return Response::error("Bad Request", 400);
+        return Response::error("missing request timestamp", 400);
     };
 
     let signature = if let Some(sig) = headers.get("x-signature-ed25519")? {
         sig
     } else {
-        return Response::error("Bad Request", 400);
+        return Response::error("missing request signature", 401);
     };
 
     let signature = hex::decode(&signature).unwrap();
@@ -53,11 +52,9 @@ pub async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<R
         .verify(format!("{}{}", timestamp, body).as_bytes(), &signature)
         .is_err()
     {
-        return Response::error("Verification Failed", 401);
+        return Response::error("invalid request signature", 401);
     }
 
-    let emote_store = env.kv("emote_store")?;
-
     let interaction: Interaction = serde_json::from_str(&body)?;
-    interaction_handler::handle(interaction, &emote_store).await
+    interaction_handler::handle(interaction, &env).await
 }
