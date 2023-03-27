@@ -2,7 +2,7 @@ use twilight_interactions::command::{CommandModel, CreateCommand};
 use worker::{Env, Response};
 
 mod add;
-mod parser;
+pub mod parser;
 mod send;
 
 use add::AddEmote;

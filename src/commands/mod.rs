@@ -3,7 +3,7 @@ use twilight_model::application::command;
 use twilight_model::application::interaction::{Interaction, InteractionData};
 use worker::{Env, Response};
 
-mod emote;
+pub mod emote;
 
 pub use emote::Emote;
 use emote::EmoteAutocomplete;

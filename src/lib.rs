@@ -5,6 +5,7 @@ use worker::{console_log, event, Date, Env, Method, Request, Response};
 pub mod commands;
 mod interaction_handler;
 mod utils;
+mod emote_adder;
 
 fn log_request(req: &Request) {
     console_log!(
@@ -21,6 +22,10 @@ pub async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> worker::
     log_request(&req);
 
     utils::set_panic_hook();
+
+    if req.path() == "/add_emote" {
+        return emote_adder::handle(req, env).await;
+    }
 
     if req.path() != "/" || req.method() != Method::Post {
         return Response::error("Invalid request", 400);

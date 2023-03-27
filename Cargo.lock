@@ -271,6 +271,7 @@ dependencies = [
  "ed25519-dalek",
  "hex",
  "reqwest",
+ "serde",
  "serde_json",
  "twilight-interactions",
  "twilight-model",
